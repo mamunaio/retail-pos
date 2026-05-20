@@ -6,7 +6,10 @@ to see all tables.
 """
 
 from retail_pos.models.inventory import Inventory
+from retail_pos.models.payment import Payment, PaymentMethod
 from retail_pos.models.product import Product, ProductUnit
+from retail_pos.models.sale import Sale, SaleStatus
+from retail_pos.models.sale_item import SaleItem
 from retail_pos.models.stock_movement import MovementType, StockMovement
 from retail_pos.models.terminal import Terminal
 from retail_pos.models.user import User, UserRole
@@ -14,8 +17,13 @@ from retail_pos.models.user import User, UserRole
 __all__ = [
     "Inventory",
     "MovementType",
+    "Payment",
+    "PaymentMethod",
     "Product",
     "ProductUnit",
+    "Sale",
+    "SaleItem",
+    "SaleStatus",
     "StockMovement",
     "Terminal",
     "User",
