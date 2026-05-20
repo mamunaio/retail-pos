@@ -4,10 +4,13 @@ Creates:
   - 1 admin user (username ``admin``, PIN ``1234``)
   - 1 cashier user (username ``cashier1``, PIN ``0000``)
   - 1 terminal (``POS-01``)
-  - A handful of sample products
+  - A handful of sample products, each with an opening stock balance and a
+    reorder level so the inventory and low-stock features have something to
+    show.
 
 Safe to run multiple times: existing rows (matched by their unique key) are
-skipped.
+skipped, and inventory is only initialised for products that don't yet have
+any stock movement recorded.
 
 Usage:
     python -m scripts.seed
@@ -21,7 +24,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from retail_pos.db import session_scope
-from retail_pos.models import Product, ProductUnit, Terminal, User, UserRole
+from retail_pos.models import (
+    MovementType,
+    Product,
+    ProductUnit,
+    StockMovement,
+    Terminal,
+    User,
+    UserRole,
+)
+from retail_pos.services.inventory import record_initial_stock, set_reorder_level
 from retail_pos.utils.security import hash_pin
 
 
@@ -83,6 +95,8 @@ SAMPLE_PRODUCTS: list[dict[str, object]] = [
         "unit": ProductUnit.PIECE,
         "cost_price": Decimal("18.00"),
         "selling_price": Decimal("25.00"),
+        "initial_stock": Decimal("48"),
+        "reorder_level": Decimal("12"),
     },
     {
         "barcode": "8901234567891",
@@ -91,6 +105,8 @@ SAMPLE_PRODUCTS: list[dict[str, object]] = [
         "unit": ProductUnit.PIECE,
         "cost_price": Decimal("32.00"),
         "selling_price": Decimal("40.00"),
+        "initial_stock": Decimal("24"),
+        "reorder_level": Decimal("6"),
     },
     {
         "barcode": "8901234567892",
@@ -99,6 +115,8 @@ SAMPLE_PRODUCTS: list[dict[str, object]] = [
         "unit": ProductUnit.KILOGRAM,
         "cost_price": Decimal("65.00"),
         "selling_price": Decimal("75.00"),
+        "initial_stock": Decimal("100.000"),
+        "reorder_level": Decimal("20.000"),
     },
     {
         "barcode": "8901234567893",
@@ -107,6 +125,8 @@ SAMPLE_PRODUCTS: list[dict[str, object]] = [
         "unit": ProductUnit.PIECE,
         "cost_price": Decimal("165.00"),
         "selling_price": Decimal("185.00"),
+        "initial_stock": Decimal("30"),
+        "reorder_level": Decimal("8"),
     },
     {
         "barcode": "8901234567894",
@@ -115,14 +135,22 @@ SAMPLE_PRODUCTS: list[dict[str, object]] = [
         "unit": ProductUnit.PIECE,
         "cost_price": Decimal("45.00"),
         "selling_price": Decimal("55.00"),
+        "initial_stock": Decimal("60"),
+        "reorder_level": Decimal("15"),
     },
 ]
+
+
+def _has_movements(db: Session, product: Product) -> bool:
+    return db.scalar(
+        select(StockMovement.id).where(StockMovement.product_id == product.id).limit(1)
+    ) is not None
 
 
 def seed() -> None:
     """Populate the local database with development sample data."""
     with session_scope() as db:
-        _get_or_create_user(
+        admin = _get_or_create_user(
             db,
             username="admin",
             pin="1234",
@@ -139,14 +167,32 @@ def seed() -> None:
 
         _get_or_create_terminal(db, terminal_code="POS-01", name="Front Counter")
 
+        # Flush so the admin user has an id we can attribute opening stock to.
+        db.flush()
+
         for item in SAMPLE_PRODUCTS:
-            _get_or_create_product(db, **item)  # type: ignore[arg-type]
+            initial_stock = item.pop("initial_stock")  # type: ignore[arg-type]
+            reorder_level = item.pop("reorder_level")  # type: ignore[arg-type]
+            product = _get_or_create_product(db, **item)  # type: ignore[arg-type]
+            db.flush()
+
+            # Only seed inventory for products we haven't seeded before. This
+            # keeps repeated seed runs idempotent (no duplicate INITIAL rows).
+            if not _has_movements(db, product):
+                set_reorder_level(db, product, reorder_level)
+                record_initial_stock(
+                    db,
+                    product,
+                    initial_stock,
+                    user_id=admin.id,
+                    notes="Opening stock from seed script",
+                )
 
     print("Seed complete:")
-    print("  - admin   / PIN 1234")
+    print("  - admin    / PIN 1234")
     print("  - cashier1 / PIN 0000")
     print("  - terminal POS-01")
-    print(f"  - {len(SAMPLE_PRODUCTS)} sample products")
+    print(f"  - {len(SAMPLE_PRODUCTS)} sample products with opening stock + reorder levels")
 
 
 if __name__ == "__main__":
