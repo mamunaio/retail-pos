@@ -15,6 +15,20 @@ from retail_pos.services.auth import (
     reset_failed_attempts,
     unlock_user,
 )
+from retail_pos.services.products import (
+    DuplicateBarcodeError,
+    ProductError,
+    ProductNotFoundError,
+    count_products,
+    create_product,
+    deactivate_product,
+    get_product,
+    get_product_by_barcode,
+    list_categories,
+    list_products,
+    reactivate_product,
+    update_product,
+)
 from retail_pos.services.session import (
     NotLoggedInError,
     PermissionDeniedError,
@@ -23,17 +37,32 @@ from retail_pos.services.session import (
 )
 
 __all__ = [
+    # auth
     "AccountInactiveError",
     "AccountLockedError",
     "AuthError",
     "AuthenticatedUser",
     "InvalidCredentialsError",
+    "authenticate",
+    "change_pin",
+    "reset_failed_attempts",
+    "unlock_user",
+    # products
+    "DuplicateBarcodeError",
+    "ProductError",
+    "ProductNotFoundError",
+    "count_products",
+    "create_product",
+    "deactivate_product",
+    "get_product",
+    "get_product_by_barcode",
+    "list_categories",
+    "list_products",
+    "reactivate_product",
+    "update_product",
+    # session
     "NotLoggedInError",
     "PermissionDeniedError",
     "Session",
-    "authenticate",
-    "change_pin",
     "current_session",
-    "reset_failed_attempts",
-    "unlock_user",
 ]
