@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import Boolean, String
+from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from retail_pos.db.base import Base, SyncMixin, TimestampMixin, generate_uuid
@@ -22,6 +23,12 @@ class User(Base, TimestampMixin, SyncMixin):
 
     Authentication uses a numeric PIN (4-6 digits) to keep cashier login fast.
     The PIN is stored as a bcrypt hash in :attr:`pin_hash`.
+
+    Login security:
+      - :attr:`failed_pin_attempts` tracks consecutive wrong PINs since the
+        last successful login. Reset to ``0`` on success.
+      - :attr:`locked_until` holds the timestamp until which login is blocked
+        (set when ``failed_pin_attempts`` crosses the configured threshold).
     """
 
     __tablename__ = "users"
@@ -32,6 +39,11 @@ class User(Base, TimestampMixin, SyncMixin):
     full_name: Mapped[str] = mapped_column(String(100), nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default=UserRole.CASHIER)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    failed_pin_attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<User id={self.id!s} username={self.username!r} role={self.role!r}>"
