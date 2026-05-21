@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management - Retail POS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #38a169;
+        }
+        
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+        
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        th {
+            background: #f8f9fa;
+            color: #667eea;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .stock-level {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .stock-high {
+            color: #48bb78;
+        }
+        
+        .stock-medium {
+            color: #ed8936;
+        }
+        
+        .stock-low {
+            color: #f56565;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge.low-stock {
+            background: #fed7d7;
+            color: #c53030;
+        }
+        
+        .badge.ok {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-content h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .alert-error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #fc8181;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>📦 Inventory Management</h1>
+                <p style="color: #666; margin-top: 5px;">Stock tracking and management</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="window.location.href='/'">← Back to Home</button>
+                <button class="btn btn-primary" onclick="showAdjustModal()">Adjust Stock</button>
+            </div>
+        </div>
+        
+        <div id="alertContainer"></div>
+        
+        <div class="section">
+            <h2>📊 Current Inventory</h2>
+            <div id="inventoryTable" class="loading">Loading inventory...</div>
+        </div>
+        
+        <div class="section">
+            <h2>⚠️ Low Stock Alerts</h2>
+            <div id="lowStockTable" class="loading">Loading low stock items...</div>
+        </div>
+        
+        <div class="section">
+            <h2>📜 Recent Stock Movements</h2>
+            <div id="movementsTable" class="loading">Loading movements...</div>
+        </div>
+    </div>
+    
+    <!-- Adjust Stock Modal -->
+    <div id="adjustModal" class="modal">
+        <div class="modal-content">
+            <h3>Adjust Stock</h3>
+            <form id="adjustForm" onsubmit="submitAdjustment(event)">
+                <div class="form-group">
+                    <label>Product *</label>
+                    <select id="productSelect" required>
+                        <option value="">Select a product...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Current Stock</label>
+                    <input type="text" id="currentStock" readonly style="background: #f0f0f0;">
+                </div>
+                <div class="form-group">
+                    <label>Adjustment Type *</label>
+                    <select id="movementType" required>
+                        <option value="purchase">Purchase (Stock In)</option>
+                        <option value="adjustment">Adjustment</option>
+                        <option value="return">Customer Return</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantity Change * (Positive to add, Negative to subtract)</label>
+                    <input type="number" id="quantityChange" step="0.01" required placeholder="e.g., 50 or -10">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="notes" placeholder="Optional notes about this adjustment"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api/v1';
+        let inventoryData = [];
+        
+        async function fetchData(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Request failed');
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message, 'error');
+                return null;
+            }
+        }
+        
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        function getStockClass(quantity, reorderLevel) {
+            if (quantity <= reorderLevel) return 'stock-low';
+            if (quantity <= reorderLevel * 2) return 'stock-medium';
+            return 'stock-high';
+        }
+        
+        async function loadInventory() {
+            inventoryData = await fetchData('/inventory');
+            if (!inventoryData) return;
+            
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Current Stock</th>
+                            <th>Reorder Level</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${inventoryData.map(item => {
+                            const stockClass = getStockClass(parseFloat(item.inventory.quantity), parseFloat(item.inventory.reorder_level));
+                            const isLowStock = item.inventory.is_low_stock;
+                            
+                            return `
+                                <tr>
+                                    <td>
+                                        <strong>${item.name}</strong><br>
+                                        <small style="color: #999;">${item.barcode}</small>
+                                    </td>
+                                    <td>${item.category || '-'}</td>
+                                    <td class="stock-level ${stockClass}">
+                                        ${item.inventory.quantity} ${item.unit}
+                                    </td>
+                                    <td>${item.inventory.reorder_level} ${item.unit}</td>
+                                    <td>
+                                        <span class="badge ${isLowStock ? 'low-stock' : 'ok'}">
+                                            ${isLowStock ? '⚠️ Low Stock' : '✓ OK'}
+                                        </span>
+                                    </td>
+                                    <td class="actions">
+                                        <button class="btn btn-primary btn-sm" onclick="quickAdjust('${item.id}', '${item.name}', ${item.inventory.quantity})">
+                                            Adjust
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="viewHistory('${item.id}', '${item.name}')">
+                                            History
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('inventoryTable').innerHTML = html;
+            
+            // Populate product select
+            const select = document.getElementById('productSelect');
+            select.innerHTML = '<option value="">Select a product...</option>' +
+                inventoryData.map(item => 
+                    `<option value="${item.id}" data-stock="${item.inventory.quantity}">${item.name} (${item.barcode})</option>`
+                ).join('');
+        }
+        
+        async function loadLowStock() {
+            const lowStock = await fetchData('/inventory/low-stock');
+            if (!lowStock || lowStock.length === 0) {
+                document.getElementById('lowStockTable').innerHTML = '<p style="color: #48bb78; text-align: center; padding: 20px;">✓ No low stock items</p>';
+                return;
+            }
+            
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Current Stock</th>
+                            <th>Reorder Level</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${lowStock.map(item => `
+                            <tr>
+                                <td>
+                                    <strong>${item.product.name}</strong><br>
+                                    <small style="color: #999;">${item.product.barcode}</small>
+                                </td>
+                                <td>${item.product.category || '-'}</td>
+                                <td class="stock-level stock-low">
+                                    ${item.inventory.quantity} ${item.product.unit}
+                                </td>
+                                <td>${item.inventory.reorder_level} ${item.product.unit}</td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm" onclick="quickAdjust('${item.product.id}', '${item.product.name}', ${item.inventory.quantity})">
+                                        Restock
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('lowStockTable').innerHTML = html;
+        }
+        
+        async function loadMovements() {
+            const movements = await fetchData('/stock-movements?limit=20');
+            if (!movements || movements.length === 0) {
+                document.getElementById('movementsTable').innerHTML = '<p style="text-align: center; padding: 20px; color: #999;">No movements yet</p>';
+                return;
+            }
+            
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Change</th>
+                            <th>After</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${movements.map(m => `
+                            <tr>
+                                <td>${new Date(m.created_at).toLocaleString('bn-BD')}</td>
+                                <td><span class="badge">${m.movement_type}</span></td>
+                                <td style="color: ${parseFloat(m.quantity_change) > 0 ? '#48bb78' : '#f56565'}; font-weight: bold;">
+                                    ${parseFloat(m.quantity_change) > 0 ? '+' : ''}${m.quantity_change}
+                                </td>
+                                <td>${m.quantity_after}</td>
+                                <td>${m.notes || '-'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('movementsTable').innerHTML = html;
+        }
+        
+        function showAdjustModal() {
+            document.getElementById('adjustModal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('adjustModal').classList.remove('active');
+            document.getElementById('adjustForm').reset();
+            document.getElementById('currentStock').value = '';
+        }
+        
+        function quickAdjust(productId, productName, currentStock) {
+            showAdjustModal();
+            document.getElementById('productSelect').value = productId;
+            document.getElementById('currentStock').value = currentStock;
+        }
+        
+        document.getElementById('productSelect').addEventListener('change', function() {
+            const option = this.options[this.selectedIndex];
+            const stock = option.getAttribute('data-stock');
+            document.getElementById('currentStock').value = stock || '';
+        });
+        
+        async function submitAdjustment(event) {
+            event.preventDefault();
+            
+            const data = {
+                product_id: document.getElementById('productSelect').value,
+                quantity_change: parseFloat(document.getElementById('quantityChange').value),
+                movement_type: document.getElementById('movementType').value,
+                notes: document.getElementById('notes').value || null
+            };
+            
+            const result = await fetchData('/inventory/adjust', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            if (result) {
+                showAlert('Stock adjusted successfully!', 'success');
+                closeModal();
+                loadInventory();
+                loadLowStock();
+                loadMovements();
+            }
+        }
+        
+        async function viewHistory(productId, productName) {
+            const movements = await fetchData(`/inventory/${productId}/movements`);
+            if (!movements) return;
+            
+            alert(`Stock history for ${productName}:\n\n` + 
+                movements.slice(0, 10).map(m => 
+                    `${new Date(m.created_at).toLocaleString()}: ${m.movement_type} ${m.quantity_change > 0 ? '+' : ''}${m.quantity_change} (After: ${m.quantity_after})`
+                ).join('\n')
+            );
+        }
+        
+        // Load all data on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadInventory();
+            loadLowStock();
+            loadMovements();
+        });
+    </script>
+</body>
+</html>

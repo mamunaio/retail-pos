@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail POS - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+        }
+        
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .login-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .login-form input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .login-form button {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .login-form button:hover {
+            background: #5568d3;
+        }
+        
+        .login-result {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .login-result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .login-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        th {
+            background: #f8f9fa;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge.admin {
+            background: #667eea;
+            color: white;
+        }
+        
+        .badge.cashier {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .badge.active {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .price {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 Retail POS System</h1>
+            <p>Development API Demo - FastAPI + SQLAlchemy + SQLite</p>
+            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="/static/dashboard.html" style="display: inline-block; padding: 10px 20px; background: #764ba2; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                    📊 Dashboard
+                </a>
+                <a href="/static/pos.html" style="display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                    💰 POS Terminal
+                </a>
+                <a href="/static/inventory.html" style="display: inline-block; padding: 10px 20px; background: #48bb78; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                    📦 Inventory Management
+                </a>
+                <a href="/static/reports.html" style="display: inline-block; padding: 10px 20px; background: #ed8936; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                    📊 Sales Reports
+                </a>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📊 Statistics</h2>
+            <div class="stats" id="stats">
+                <div class="stat-card">
+                    <h3 id="userCount">-</h3>
+                    <p>Total Users</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="productCount">-</h3>
+                    <p>Total Products</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="terminalCount">-</h3>
+                    <p>Total Terminals</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🔐 Login Test</h2>
+            <div class="login-form">
+                <input type="text" id="username" placeholder="Username (admin or cashier1)" value="admin">
+                <input type="password" id="pin" placeholder="PIN (1234 or 0000)" value="1234">
+                <button onclick="testLogin()">Login</button>
+            </div>
+            <div class="login-result" id="loginResult"></div>
+        </div>
+        
+        <div class="section">
+            <h2>👥 Users</h2>
+            <div id="usersTable" class="loading">Loading...</div>
+        </div>
+        
+        <div class="section">
+            <h2>📦 Products</h2>
+            <div id="productsTable" class="loading">Loading...</div>
+        </div>
+        
+        <div class="section">
+            <h2>🖥️ Terminals</h2>
+            <div id="terminalsTable" class="loading">Loading...</div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api/v1';
+        
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                return null;
+            }
+        }
+        
+        async function loadUsers() {
+            const users = await fetchData('/users');
+            if (!users) return;
+            
+            document.getElementById('userCount').textContent = users.length;
+            
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td><strong>${user.username}</strong></td>
+                                <td>${user.full_name}</td>
+                                <td><span class="badge ${user.role}">${user.role}</span></td>
+                                <td><span class="badge ${user.is_active ? 'active' : ''}">${user.is_active ? 'Active' : 'Inactive'}</span></td>
+                                <td>${new Date(user.created_at).toLocaleString('bn-BD')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('usersTable').innerHTML = html;
+        }
+        
+        async function loadProducts() {
+            const products = await fetchData('/products');
+            if (!products) return;
+            
+            document.getElementById('productCount').textContent = products.length;
+            
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Unit</th>
+                            <th>Cost Price</th>
+                            <th>Selling Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${products.map(product => `
+                            <tr>
+                                <td><code>${product.barcode}</code></td>
+                                <td><strong>${product.name}</strong></td>
+                                <td>${product.category || '-'}</td>
+                                <td>${product.unit}</td>
+                                <td>৳${product.cost_price}</td>
+                                <td class="price">৳${product.selling_price}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('productsTable').innerHTML = html;
+        }
+        
+        async function loadTerminals() {
+            const terminals = await fetchData('/terminals');
+            if (!terminals) return;
+            
+            document.getElementById('terminalCount').textContent = terminals.length;
+            
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Terminal Code</th>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${terminals.map(terminal => `
+                            <tr>
+                                <td><strong>${terminal.terminal_code}</strong></td>
+                                <td>${terminal.name}</td>
+                                <td><span class="badge ${terminal.is_active ? 'active' : ''}">${terminal.is_active ? 'Active' : 'Inactive'}</span></td>
+                                <td>${new Date(terminal.created_at).toLocaleString('bn-BD')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('terminalsTable').innerHTML = html;
+        }
+        
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const pin = document.getElementById('pin').value;
+            const resultDiv = document.getElementById('loginResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, pin })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.className = 'login-result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ ${result.message}</strong><br>
+                        Welcome, ${result.user.full_name} (${result.user.role})
+                    `;
+                } else {
+                    resultDiv.className = 'login-result error';
+                    resultDiv.innerHTML = `<strong>❌ ${result.message}</strong>`;
+                }
+                
+                resultDiv.style.display = 'block';
+            } catch (error) {
+                resultDiv.className = 'login-result error';
+                resultDiv.innerHTML = `<strong>❌ Error: ${error.message}</strong>`;
+                resultDiv.style.display = 'block';
+            }
+        }
+        
+        // Load all data on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            loadProducts();
+            loadTerminals();
+        });
+    </script>
+</body>
+</html>

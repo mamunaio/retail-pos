@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Management - Retail POS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .nav a {
+            color: #667eea;
+            text-decoration: none;
+            margin-right: 20px;
+            font-weight: 600;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            background: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #667eea;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-draft { background: #ffc107; color: #000; }
+        .status-ordered { background: #17a2b8; color: white; }
+        .status-received { background: #28a745; color: white; }
+        .status-cancelled { background: #dc3545; color: white; }
+        .status-unpaid { background: #dc3545; color: white; }
+        .status-partial { background: #ffc107; color: #000; }
+        .status-paid { background: #28a745; color: white; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-card h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        .item-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: end;
+        }
+        #message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Purchase Management</h1>
+        
+        <div class="nav">
+            <a href="/">🏠 Home</a>
+            <a href="/static/pos.html">💰 POS</a>
+            <a href="/static/inventory.html">📦 Inventory</a>
+            <a href="/static/purchases.html">🛒 Purchases</a>
+            <a href="/static/reports.html">📊 Reports</a>
+            <a href="/static/dashboard.html">📈 Dashboard</a>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('suppliers')">👥 Suppliers</div>
+            <div class="tab" onclick="showTab('purchases')">🛒 Purchases</div>
+            <div class="tab" onclick="showTab('create-purchase')">➕ New Purchase</div>
+        </div>
+
+        <div id="message"></div>
+
+        <!-- Suppliers Tab -->
+        <div id="suppliers-tab" class="tab-content active">
+            <div class="card">
+                <h2>Suppliers</h2>
+                <button class="btn" onclick="showSupplierForm()">➕ Add Supplier</button>
+                
+                <div id="supplier-form" style="display: none; margin-top: 20px;">
+                    <h3>Add New Supplier</h3>
+                    <div class="form-group">
+                        <label>Name *</label>
+                        <input type="text" id="supplier-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Company Name</label>
+                        <input type="text" id="supplier-company">
+                    </div>
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="text" id="supplier-phone">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="supplier-email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <textarea id="supplier-address" rows="2"></textarea>
+                    </div>
+                    <div class="grid">
+                        <div class="form-group">
+                            <label>Contact Person</label>
+                            <input type="text" id="supplier-contact">
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Terms</label>
+                            <input type="text" id="supplier-terms" placeholder="e.g., Net 30, COD">
+                        </div>
+                        <div class="form-group">
+                            <label>Credit Limit</label>
+                            <input type="number" id="supplier-credit" value="0" step="0.01">
+                        </div>
+                    </div>
+                    <button class="btn" onclick="createSupplier()">Save Supplier</button>
+                    <button class="btn btn-secondary" onclick="hideSupplierForm()">Cancel</button>
+                </div>
+
+                <table id="suppliers-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Company</th>
+                            <th>Phone</th>
+                            <th>Total Purchases</th>
+                            <th>Outstanding</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Purchases Tab -->
+        <div id="purchases-tab" class="tab-content">
+            <div class="card">
+                <h2>Purchase Orders</h2>
+                <div class="grid">
+                    <div class="stat-card">
+                        <h3>Total Purchases</h3>
+                        <div class="value" id="total-purchases">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Amount</h3>
+                        <div class="value" id="total-amount">৳0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Paid</h3>
+                        <div class="value" id="total-paid">৳0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Outstanding</h3>
+                        <div class="value" id="total-outstanding">৳0</div>
+                    </div>
+                </div>
+
+                <table id="purchases-table">
+                    <thead>
+                        <tr>
+                            <th>PO Number</th>
+                            <th>Supplier</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Create Purchase Tab -->
+        <div id="create-purchase-tab" class="tab-content">
+            <div class="card">
+                <h2>Create Purchase Order</h2>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>Supplier *</label>
+                        <select id="purchase-supplier" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Purchase Date</label>
+                        <input type="date" id="purchase-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Expected Delivery</label>
+                        <input type="date" id="purchase-delivery">
+                    </div>
+                    <div class="form-group">
+                        <label>Reference Number</label>
+                        <input type="text" id="purchase-ref">
+                    </div>
+                </div>
+
+                <h3>Items</h3>
+                <div id="purchase-items">
+                    <div class="item-row">
+                        <select class="item-product" required></select>
+                        <input type="number" class="item-quantity" placeholder="Quantity" step="0.01" required>
+                        <input type="number" class="item-cost" placeholder="Unit Cost" step="0.01" required>
+                        <button class="btn btn-danger" onclick="removeItem(this)">✕</button>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="addItem()">➕ Add Item</button>
+
+                <div class="grid" style="margin-top: 20px;">
+                    <div class="form-group">
+                        <label>Tax Amount</label>
+                        <input type="number" id="purchase-tax" value="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Shipping Cost</label>
+                        <input type="number" id="purchase-shipping" value="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Discount</label>
+                        <input type="number" id="purchase-discount" value="0" step="0.01">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="purchase-notes" rows="3"></textarea>
+                </div>
+
+                <button class="btn btn-success" onclick="createPurchase()">Create Purchase Order</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api/v1';
+        let suppliers = [];
+        let products = [];
+        let purchases = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSuppliers();
+            loadProducts();
+            loadPurchases();
+            setDefaultDate();
+        });
+
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('purchase-date').value = today;
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        function showMessage(message, type = 'success') {
+            const msgDiv = document.getElementById('message');
+            msgDiv.textContent = message;
+            msgDiv.className = type;
+            msgDiv.style.display = 'block';
+            setTimeout(() => msgDiv.style.display = 'none', 5000);
+        }
+
+        // Suppliers
+        async function loadSuppliers() {
+            try {
+                const response = await fetch(`${API_BASE}/suppliers`);
+                suppliers = await response.json();
+                renderSuppliers();
+                populateSupplierDropdown();
+            } catch (error) {
+                showMessage('Failed to load suppliers: ' + error.message, 'error');
+            }
+        }
+
+        function renderSuppliers() {
+            const tbody = document.querySelector('#suppliers-table tbody');
+            tbody.innerHTML = suppliers.map(s => `
+                <tr>
+                    <td>${s.supplier_code}</td>
+                    <td>${s.name}</td>
+                    <td>${s.company_name || '-'}</td>
+                    <td>${s.phone || '-'}</td>
+                    <td>৳${parseFloat(s.total_purchases).toFixed(2)}</td>
+                    <td>৳${parseFloat(s.outstanding_balance).toFixed(2)}</td>
+                    <td><span class="status-badge ${s.is_active ? 'status-received' : 'status-cancelled'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function populateSupplierDropdown() {
+            const select = document.getElementById('purchase-supplier');
+            select.innerHTML = '<option value="">Select Supplier</option>' + 
+                suppliers.map(s => `<option value="${s.id}">${s.name} (${s.supplier_code})</option>`).join('');
+        }
+
+        function showSupplierForm() {
+            document.getElementById('supplier-form').style.display = 'block';
+        }
+
+        function hideSupplierForm() {
+            document.getElementById('supplier-form').style.display = 'none';
+        }
+
+        async function createSupplier() {
+            const data = {
+                name: document.getElementById('supplier-name').value,
+                company_name: document.getElementById('supplier-company').value || null,
+                phone: document.getElementById('supplier-phone').value || null,
+                email: document.getElementById('supplier-email').value || null,
+                address: document.getElementById('supplier-address').value || null,
+                contact_person: document.getElementById('supplier-contact').value || null,
+                payment_terms: document.getElementById('supplier-terms').value || null,
+                credit_limit: parseFloat(document.getElementById('supplier-credit').value) || 0
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/suppliers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    showMessage('Supplier created successfully!');
+                    hideSupplierForm();
+                    loadSuppliers();
+                } else {
+                    const error = await response.json();
+                    showMessage('Error: ' + error.detail, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to create supplier: ' + error.message, 'error');
+            }
+        }
+
+        // Products
+        async function loadProducts() {
+            try {
+                const response = await fetch(`${API_BASE}/products`);
+                products = await response.json();
+                populateProductDropdowns();
+            } catch (error) {
+                showMessage('Failed to load products: ' + error.message, 'error');
+            }
+        }
+
+        function populateProductDropdowns() {
+            const selects = document.querySelectorAll('.item-product');
+            const options = '<option value="">Select Product</option>' + 
+                products.map(p => `<option value="${p.id}">${p.name} (${p.barcode})</option>`).join('');
+            selects.forEach(select => select.innerHTML = options);
+        }
+
+        // Purchase Items
+        function addItem() {
+            const container = document.getElementById('purchase-items');
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.innerHTML = `
+                <select class="item-product" required></select>
+                <input type="number" class="item-quantity" placeholder="Quantity" step="0.01" required>
+                <input type="number" class="item-cost" placeholder="Unit Cost" step="0.01" required>
+                <button class="btn btn-danger" onclick="removeItem(this)">✕</button>
+            `;
+            container.appendChild(row);
+            populateProductDropdowns();
+        }
+
+        function removeItem(button) {
+            button.parentElement.remove();
+        }
+
+        // Purchases
+        async function loadPurchases() {
+            try {
+                const response = await fetch(`${API_BASE}/purchases`);
+                purchases = await response.json();
+                renderPurchases();
+                
+                // Load summary
+                const summaryResponse = await fetch(`${API_BASE}/purchases/reports/summary`);
+                const summary = await summaryResponse.json();
+                document.getElementById('total-purchases').textContent = summary.total_purchases;
+                document.getElementById('total-amount').textContent = '৳' + summary.total_amount.toFixed(2);
+                document.getElementById('total-paid').textContent = '৳' + summary.total_paid.toFixed(2);
+                document.getElementById('total-outstanding').textContent = '৳' + summary.total_outstanding.toFixed(2);
+            } catch (error) {
+                showMessage('Failed to load purchases: ' + error.message, 'error');
+            }
+        }
+
+        function renderPurchases() {
+            const tbody = document.querySelector('#purchases-table tbody');
+            tbody.innerHTML = purchases.map(p => `
+                <tr>
+                    <td>${p.purchase_number}</td>
+                    <td>${p.supplier_name}</td>
+                    <td>${new Date(p.purchase_date).toLocaleDateString()}</td>
+                    <td>৳${parseFloat(p.total_amount).toFixed(2)}</td>
+                    <td>৳${parseFloat(p.paid_amount).toFixed(2)}</td>
+                    <td><span class="status-badge status-${p.status}">${p.status}</span></td>
+                    <td><span class="status-badge status-${p.payment_status}">${p.payment_status}</span></td>
+                    <td>
+                        ${p.status === 'draft' ? `<button class="btn btn-success" onclick="markOrdered('${p.id}')">Mark Ordered</button>` : ''}
+                        ${p.status === 'ordered' ? `<button class="btn btn-success" onclick="markReceived('${p.id}')">Mark Received</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function createPurchase() {
+            const items = [];
+            document.querySelectorAll('.item-row').forEach(row => {
+                const product = row.querySelector('.item-product').value;
+                const quantity = row.querySelector('.item-quantity').value;
+                const cost = row.querySelector('.item-cost').value;
+                if (product && quantity && cost) {
+                    items.push({
+                        product_id: product,
+                        quantity: parseFloat(quantity),
+                        unit_cost: parseFloat(cost)
+                    });
+                }
+            });
+
+            if (items.length === 0) {
+                showMessage('Please add at least one item', 'error');
+                return;
+            }
+
+            const data = {
+                supplier_id: document.getElementById('purchase-supplier').value,
+                items: items,
+                purchase_date: document.getElementById('purchase-date').value || null,
+                expected_delivery_date: document.getElementById('purchase-delivery').value || null,
+                tax_amount: parseFloat(document.getElementById('purchase-tax').value) || 0,
+                shipping_cost: parseFloat(document.getElementById('purchase-shipping').value) || 0,
+                discount_amount: parseFloat(document.getElementById('purchase-discount').value) || 0,
+                reference_number: document.getElementById('purchase-ref').value || null,
+                notes: document.getElementById('purchase-notes').value || null
+            };
+
+            try {
+                // Get admin user ID (in real app, this would come from login)
+                const usersResponse = await fetch(`${API_BASE}/users`);
+                const users = await usersResponse.json();
+                const adminUser = users.find(u => u.role === 'admin');
+
+                const response = await fetch(`${API_BASE}/purchases?created_by=${adminUser.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    showMessage('Purchase order created successfully!');
+                    loadPurchases();
+                    showTab('purchases');
+                } else {
+                    const error = await response.json();
+                    showMessage('Error: ' + error.detail, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to create purchase: ' + error.message, 'error');
+            }
+        }
+
+        async function markOrdered(purchaseId) {
+            try {
+                const response = await fetch(`${API_BASE}/purchases/${purchaseId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'ordered' })
+                });
+                
+                if (response.ok) {
+                    showMessage('Purchase marked as ordered!');
+                    loadPurchases();
+                } else {
+                    const error = await response.json();
+                    showMessage('Error: ' + error.detail, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to update purchase: ' + error.message, 'error');
+            }
+        }
+
+        async function markReceived(purchaseId) {
+            try {
+                // Get admin user ID
+                const usersResponse = await fetch(`${API_BASE}/users`);
+                const users = await usersResponse.json();
+                const adminUser = users.find(u => u.role === 'admin');
+
+                const response = await fetch(`${API_BASE}/purchases/${purchaseId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        status: 'received',
+                        received_by: adminUser.id
+                    })
+                });
+                
+                if (response.ok) {
+                    showMessage('Purchase received! Stock updated.');
+                    loadPurchases();
+                } else {
+                    const error = await response.json();
+                    showMessage('Error: ' + error.detail, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to receive purchase: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

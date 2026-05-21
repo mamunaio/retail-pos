@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Reports - Retail POS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            background: #48bb78;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        th {
+            background: #f8f9fa;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge.completed {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .badge.cancelled {
+            background: #fed7d7;
+            color: #c53030;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>📊 Sales Reports</h1>
+                <p style="color: #666; margin-top: 5px;">Daily sales summary and transactions</p>
+            </div>
+            <a href="/" class="btn">← Back to Home</a>
+        </div>
+        
+        <div class="section">
+            <h2>📈 Today's Summary</h2>
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <h3 id="totalSales">-</h3>
+                    <p>Total Sales</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalRevenue">-</h3>
+                    <p>Total Revenue</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalTax">-</h3>
+                    <p>Total Tax</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalDiscount">-</h3>
+                    <p>Total Discount</p>
+                </div>
+            </div>
+            
+            <h3 style="color: #667eea; margin-bottom: 15px;">Payment Methods</h3>
+            <div id="paymentMethods" class="loading">Loading...</div>
+        </div>
+        
+        <div class="section">
+            <h2>🧾 Recent Transactions</h2>
+            <div id="salesTable" class="loading">Loading sales...</div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000/api/v1';
+        
+        async function loadDailySummary() {
+            try {
+                const response = await fetch(`${API_BASE}/sales/reports/daily`);
+                const summary = await response.json();
+                
+                document.getElementById('totalSales').textContent = summary.total_sales;
+                document.getElementById('totalRevenue').textContent = `৳${summary.total_revenue.toFixed(2)}`;
+                document.getElementById('totalTax').textContent = `৳${summary.total_tax.toFixed(2)}`;
+                document.getElementById('totalDiscount').textContent = `৳${summary.total_discount.toFixed(2)}`;
+                
+                // Payment methods
+                const paymentDiv = document.getElementById('paymentMethods');
+                if (Object.keys(summary.payment_methods).length === 0) {
+                    paymentDiv.innerHTML = '<p style="color: #999;">No sales yet today</p>';
+                } else {
+                    const html = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Payment Method</th>
+                                    <th>Count</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Object.entries(summary.payment_methods).map(([method, data]) => `
+                                    <tr>
+                                        <td><strong>${method.toUpperCase()}</strong></td>
+                                        <td>${data.count}</td>
+                                        <td style="font-weight: bold; color: #667eea;">৳${data.amount.toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    paymentDiv.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading summary:', error);
+            }
+        }
+        
+        async function loadSales() {
+            try {
+                const response = await fetch(`${API_BASE}/sales?limit=50`);
+                const sales = await response.json();
+                
+                if (sales.length === 0) {
+                    document.getElementById('salesTable').innerHTML = '<p style="text-align: center; padding: 40px; color: #999;">No sales yet</p>';
+                    return;
+                }
+                
+                const html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Invoice</th>
+                                <th>Date & Time</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sales.map(sale => `
+                                <tr>
+                                    <td><strong>${sale.invoice_number}</strong></td>
+                                    <td>${new Date(sale.created_at).toLocaleString('bn-BD')}</td>
+                                    <td>${sale.customer_name || '-'}</td>
+                                    <td>${sale.items.length} items</td>
+                                    <td style="font-weight: bold; color: #667eea;">৳${sale.total_amount}</td>
+                                    <td>${sale.payment_method.toUpperCase()}</td>
+                                    <td><span class="badge ${sale.status}">${sale.status}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                document.getElementById('salesTable').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading sales:', error);
+            }
+        }
+        
+        // Load data on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDailySummary();
+            loadSales();
+        });
+    </script>
+</body>
+</html>

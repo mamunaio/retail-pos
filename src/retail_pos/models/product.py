@@ -6,7 +6,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from sqlalchemy import Boolean, Numeric, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from retail_pos.db.base import Base, SyncMixin, TimestampMixin, generate_uuid
 
@@ -47,6 +47,11 @@ class Product(Base, TimestampMixin, SyncMixin):
         Numeric(5, 2), nullable=False, default=Decimal("0.00")
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    # Relationships
+    inventory: Mapped["Inventory"] = relationship(  # type: ignore[name-defined]
+        "Inventory", back_populates="product", uselist=False, cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Product id={self.id!s} barcode={self.barcode!r} name={self.name!r}>"
